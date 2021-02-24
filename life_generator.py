@@ -3,13 +3,20 @@
 # under license
 # https://creativecommons.org/licenses/by-sa/4.0/
 
+
+
 import Tkinter as tk
 import ttk as ttk
 
 import sys
 import tkMessageBox
 #import csvUtils
+import life_generator_client as lgc
 import csv
+
+
+SERVER_PORT = 8542 # will call my client method
+CLIENT_PORT = 8546 # will call my server method      
 
 DB_FILE = "amazon_co-ecommerce_sample.csv"
 CAT_SUB = "amazon_category_and_sub_category"
@@ -17,6 +24,7 @@ PROD_NAME = "product_name"
 NUM_REV = "number_of_reviews" 
 ID = "uniq_id" 
 AVER_REV = "average_review_rating" 
+SELLER_STATE = "seller_state"
 
 dataset = None
 inputData = None
@@ -102,36 +110,45 @@ def main():
     header6.insert(tk.END, NUM_REV) 
     outputGridVals.append(header6)
        
-    for i, row in enumerate(resultArray):
- #    tp = tk.Entry(t, width=20) 
- #    tp.grid(row=i+1, column=1) 
- #    tp.insert(tk.END, resultArray[i][]) 
- #    outputGridVals.append(tp)
- # 
- #    tp2 = tk.Entry(t, width=20) 
- #    tp2.grid(row=i+1, column=2) 
- #    tp2.insert(tk.END, resultArray[i][]) 
- #    outputGridVals.append(tp2)
- # 
- #    tp3 = tk.Entry(t, width=20) 
- #    tp3.grid(row=i+1, column=2) 
- #    tp3.insert(tk.END, resultArray[i][]) 
- #    outputGridVals.append(tp3)
-      
+    
+    header7 = tk.Entry(t, width=20) 
+    header7.grid(row=0, column=7) 
+    header7.insert(tk.END, SELLER_STATE) 
+    outputGridVals.append(header7)
+    
+    dic = {}
+    for i, row in enumerate(resultArray):    
+      dic[row[cols[PROD_NAME]]] = i
+    # recieve column 7 data from content generator
+    print(str(dic))
+    c = lgc.Life_Gen_Client(CLIENT_PORT)
+    c.sendInitialInfo(dic)
+    wikiDesc = c.recieveInfo()
+    
+    del c
+    
+    #populate the contents of table
+    for i, row in enumerate(resultArray):      
       tp4 = tk.Entry(t, width=20) 
       tp4.grid(row=i+1, column=4) 
-      tp4.insert(tk.END, resultArray[i][cols[PROD_NAME]]) 
+      tp4.insert(tk.END, row[cols[PROD_NAME]]) 
       outputGridVals.append(tp4)
       
       tp5 = tk.Entry(t, width=20) 
       tp5.grid(row=i+1, column=5) 
-      tp5.insert(tk.END, resultArray[i][cols[AVER_REV]]) 
+      tp5.insert(tk.END, row[cols[AVER_REV]]) 
       outputGridVals.append(tp5)
       
       tp6 = tk.Entry(t, width=20) 
       tp6.grid(row=i+1, column=6) 
-      tp6.insert(tk.END, resultArray[i][cols[NUM_REV]]) 
+      tp6.insert(tk.END, row[cols[NUM_REV]]) 
       outputGridVals.append(tp6)
+    
+      tp7 = tk.Entry(t, width=20) 
+      tp7.grid(row=i+1, column=7) 
+      tp7.insert(tk.END, wikiDesc[row[cols[PROD_NAME]]]) 
+      outputGridVals.append(tp7)
+      
     results = createCSVLines(resultArray, inputType, inputCat, int(inputNumToGen), cols[PROD_NAME], cols[AVER_REV], cols[NUM_REV])
     createCSV(results)
 
