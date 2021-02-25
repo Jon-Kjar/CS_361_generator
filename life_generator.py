@@ -23,12 +23,7 @@ outputGridVals = []
 
 def main():
   def generateClick():
-#    global inputCat
-#    inputCat = typeVal.get()
-#    global inputNumToGen
     inputRow = c.InputRowData("toy", typeVal.get(), quant_var.get())
-    #print("quant:" + str(inputNumToGen))
-    #print("type:" + inputCat)
     
     resultArray = getTop(inputRow.inputCat, inputRow.inputNumToGen)
     
@@ -91,7 +86,12 @@ def main():
       tp7.insert(tk.END, wikiDesc[row.PROD_NAME]) 
       outputGridVals.append(tp7)
       
-    results = c.createCSVLines(resultArray, inputRow)
+      
+    results = []
+    for row in resultArray:
+      results.append(row.createCSVLine(inputRow))
+    
+      
     c.createCSV(results)
   
   # read the dataset
@@ -108,14 +108,18 @@ def main():
   if len(sys.argv) > 1:
     input1 = sys.argv[1]
     inputData = c.InputData(input1)
-    rows = []
+    csvOutput = []
     for inputDataRow in inputData.data:
       print(str(inputDataRow))
       resultArray = getTop(inputDataRow.inputCat, int(inputDataRow.inputNumToGen))
       print(str(resultArray))
-      results = c.createCSVLines(resultArray, inputDataRow)
-      rows.extend(results)
-    c.createCSV(rows)
+      results = []
+      for resultRow in resultArray:
+        results.append(resultRow.createCSVLine(inputDataRow))
+      csvOutput.extend(results)
+    c.createCSV(csvOutput)
+    return 0
+    
   # setup the window
   root1 = tk.Tk()
   
