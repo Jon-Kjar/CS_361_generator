@@ -2,197 +2,120 @@
 # "amazon_co-ecommerce_sample.csv"
 # under license
 # https://creativecommons.org/licenses/by-sa/4.0/
-
-
-
 import Tkinter as tk
 import ttk as ttk
 
 import sys
 import tkMessageBox
-#import csvUtils
 import life_generator_client as lgc
-import csv
+import life_generator_csv as c
 
-
-SERVER_PORT = 8542 # will call my client method
 CLIENT_PORT = 8546 # will call my server method      
 
 DB_FILE = "amazon_co-ecommerce_sample.csv"
-CAT_SUB = "amazon_category_and_sub_category"
-PROD_NAME = "product_name" 
-NUM_REV = "number_of_reviews" 
-ID = "uniq_id" 
-AVER_REV = "average_review_rating" 
-SELLER_STATE = "seller_state"
 
 dataset = None
-inputData = None
-
-INPUT_TYPE = "input_item_type"
-INPUT_CATEGORY = "input_item_category"
-INPUT_NUM_TO_GEN = "input_number_to_generate"
-inputCat = None
-inputType = "toys"
-inputNumToGen = 0
 
 WINDOW_TITLE = "Life Generator"
-
-cols = {}
 
 outputGridVals = []
 
 
-def createCSV(rows):
-  with open('output.csv', 'w') as f:
-    writer = csv.writer(f)
-    writer.writerow(["input_item_type","input_item_category","input_number_to_generate","output_item_name","output_item_rating","output_item_num_reviews"])        
-    for row in rows:
-      writer.writerow(row)
-        
-def createCSVLines(results, inputType, inputCat, inputCount, outputNameCol, outputRatingCol, outputNumReviewsCol):
-  p = []
-  for row in results:
-    rowVal = [inputType, inputCat, str(inputCount), row[outputNameCol], row[outputRatingCol], row[outputNumReviewsCol]]
-    p.append(rowVal)
-  return p
-        
-
-def readCSV(filePath):
-  p = []
-  with open(filePath) as f:
-    reader = csv.reader(f, delimiter=',')
-    for row in reader:
-      p.append(row)
-    return p
- 
-
 def main():
   def generateClick():
-    global inputCat
-    inputCat = typeVal.get()
-    global inputNumToGen
-    inputNumToGen = quant_var.get()
+#    global inputCat
+#    inputCat = typeVal.get()
+#    global inputNumToGen
+    inputRow = c.InputRowData("toy", typeVal.get(), quant_var.get())
     #print("quant:" + str(inputNumToGen))
     #print("type:" + inputCat)
-    resultArray = getTop(inputCat, inputNumToGen)
+    
+    resultArray = getTop(inputRow.inputCat, inputRow.inputNumToGen)
     
     for x in outputGridVals:
       x.destroy()
        
     tp = tk.Entry(t, width=20) 
- #    tp.grid(row=i, column=1) 
- #    tp.insert(tk.END, resultArray[i][]) 
- #    outputGridVals.append(tp)
- # 
- #    tp2 = tk.Entry(t, width=20) 
- #    tp2.grid(row=i, column=2) 
- #    tp2.insert(tk.END, resultArray[i][]) 
- #    outputGridVals.append(tp2)
- # 
- #    tp3 = tk.Entry(t, width=20) 
- #    tp3.grid(row=i, column=2) 
- #    tp3.insert(tk.END, resultArray[i][]) 
- #    outputGridVals.append(tp3)
-      
+
     header4 = tk.Entry(t, width=20) 
     header4.grid(row=0, column=4) 
-    header4.insert(tk.END, PROD_NAME) 
+    header4.insert(tk.END, c.PROD_NAME) 
     outputGridVals.append(header4)
     
     header5 = tk.Entry(t, width=20) 
     header5.grid(row=0, column=5) 
-    header5.insert(tk.END, AVER_REV) 
+    header5.insert(tk.END, c.AVER_REV) 
     outputGridVals.append(header5)
     
     header6 = tk.Entry(t, width=20) 
     header6.grid(row=0, column=6) 
-    header6.insert(tk.END, NUM_REV) 
+    header6.insert(tk.END, c.NUM_REV) 
     outputGridVals.append(header6)
        
     
     header7 = tk.Entry(t, width=20) 
     header7.grid(row=0, column=7) 
-    header7.insert(tk.END, SELLER_STATE) 
+    header7.insert(tk.END, c.SELLER_STATE) 
     outputGridVals.append(header7)
     
     dic = {}
     for i, row in enumerate(resultArray):    
-      dic[row[cols[PROD_NAME]]] = i
+      dic[row.PROD_NAME] = i
     # recieve column 7 data from content generator
     print(str(dic))
-    c = lgc.Life_Gen_Client(CLIENT_PORT)
-    c.sendInitialInfo(dic)
-    wikiDesc = c.recieveInfo()
+    lgClient = lgc.Life_Gen_Client(CLIENT_PORT)
+    lgClient.sendInitialInfo(dic)
+    wikiDesc = lgClient.recieveInfo()
     
-    del c
+    del lgClient
     
     #populate the contents of table
     for i, row in enumerate(resultArray):      
       tp4 = tk.Entry(t, width=20) 
       tp4.grid(row=i+1, column=4) 
-      tp4.insert(tk.END, row[cols[PROD_NAME]]) 
+      tp4.insert(tk.END, row.PROD_NAME) 
       outputGridVals.append(tp4)
       
       tp5 = tk.Entry(t, width=20) 
       tp5.grid(row=i+1, column=5) 
-      tp5.insert(tk.END, row[cols[AVER_REV]]) 
+      tp5.insert(tk.END, row.AVER_REV) 
       outputGridVals.append(tp5)
       
       tp6 = tk.Entry(t, width=20) 
       tp6.grid(row=i+1, column=6) 
-      tp6.insert(tk.END, row[cols[NUM_REV]]) 
+      tp6.insert(tk.END, row.NUM_REV) 
       outputGridVals.append(tp6)
     
       tp7 = tk.Entry(t, width=20) 
       tp7.grid(row=i+1, column=7) 
-      tp7.insert(tk.END, wikiDesc[row[cols[PROD_NAME]]]) 
+      tp7.insert(tk.END, wikiDesc[row.PROD_NAME]) 
       outputGridVals.append(tp7)
       
-    results = createCSVLines(resultArray, inputType, inputCat, int(inputNumToGen), cols[PROD_NAME], cols[AVER_REV], cols[NUM_REV])
-    createCSV(results)
-
-  def generateBatch():
-    createCSV(resultArray, cols[CAT_SUB], cols[CAT_SUB], int(inputNumToGen), cols[PROD_NAME], cols[AVER_REV], cols[NUM_REV])
-    
+    results = c.createCSVLines(resultArray, inputRow)
+    c.createCSV(results)
   
   # read the dataset
   global dataset 
-  dataset = readCSV(DB_FILE)
+  dataset = c.DatabaseData(DB_FILE)
   if dataset is None:
     print("you have a bad db csv file")
   
   #get category names
 
-  prodTypes = getTypes(CAT_SUB)
-  getCols(PROD_NAME) 
-  getCols(NUM_REV) 
-  getCols(ID) 
-  getCols(AVER_REV) 
+  prodTypes = dataset.getAllTypes()
   
   # read the input file if exists
   if len(sys.argv) > 1:
     input1 = sys.argv[1]
-    global inputData 
-    inputData = readCSV(input1)
-    if inputData is None or INPUT_TYPE not in inputData[0] or INPUT_CATEGORY not in inputData[0] or INPUT_NUM_TO_GEN not in inputData[0]:
-      print("you have a bad input csv file")
-    else:
-      rows = []
-      for i,row in enumerate(inputData):
-        if i == 0:
-          continue
-        global inputCat
-        inputCat = row[1]
-        global inputNumToGen
-        inputNumToGen = row[2]
-        global inputType
-        inputType = row[0]
-        resultArray = getTop(inputCat, int(inputNumToGen))
-        results = createCSVLines(resultArray, inputType, inputCat, int(inputNumToGen), cols[PROD_NAME], cols[AVER_REV], cols[NUM_REV])
-        rows.extend(results)
-      createCSV(rows)
-        
+    inputData = c.InputData(input1)
+    rows = []
+    for inputDataRow in inputData.data:
+      print(str(inputDataRow))
+      resultArray = getTop(inputDataRow.inputCat, int(inputDataRow.inputNumToGen))
+      print(str(resultArray))
+      results = c.createCSVLines(resultArray, inputDataRow)
+      rows.extend(results)
+    c.createCSV(rows)
   # setup the window
   root1 = tk.Tk()
   
@@ -255,68 +178,44 @@ def main():
   #my_scrollbar = tk.Scrollbar(t, orient=tk.VERTICAL, command=my_canvas.yview)
   root1.mainloop()
   
-  
+
+# filter the quantity to return by only float values
 def validate(action, index, value_if_allowed,
                  prior_value, text, validation_type, trigger_type, widget_name):
   if value_if_allowed:
       try:
-          float(value_if_allowed)
-          return True
+        int(value_if_allowed)
+        return True
       except ValueError:
-          return False
+        return False
   else:
       return False
 
 
-def getTypes(colName):
-  getCols(colName)
-  typeArray = []
-  if colName in cols.keys():
-    for i,item in enumerate(dataset):
-      if i is not 0:
-         typeArray.append(item[cols[colName]].split(' >')[0])
-    return list(sorted(set(typeArray)))
-    
-def getCols(colName):
-  if colName not in dataset[0]:
-    print("you are missing %s from your db csv" % colName)
-  else:
-    cols[colName] = dataset[0].index(colName)
-
-    
+# algorithm to get the top 'quant' num of products of certain type
 def getTop(cat, quant):
-  p = []
-  #print(len(dataset))
   # get all of category desired
-  rowNum = 0
-  for row in dataset:
-    if rowNum != 0 and cat == row[cols[CAT_SUB]].split(' >')[0]:
-      p.append(row)
-    rowNum = rowNum+ 1
-  
-  # remove anything without reviews
-  p = [s for s in p if s[cols[NUM_REV]] is not ""]
-  
+  p = [s for s in dataset.data if s.CAT_SUB == cat]
+ 
   # sort by unique id
-  p = sorted(p, key=lambda x: x[cols[ID]])
+  p = sorted(p, key=lambda x: x.ID)
   
-  # sort by number of reviews, remove ','s for example 1,999
-  p = sorted(p, key=lambda x: int(x[cols[NUM_REV]].replace(',', '')), reverse=True)
+  # sort by number of reviews
+  p = sorted(p, key=lambda x: x.NUM_REV, reverse=True)
   
   # take top (quantity * 10)
   p = p[:(quant*10)]
   
   # sort by average review
-  p = sorted(p, key=lambda x: float(x[cols[AVER_REV]].split(' out')[0]), reverse=True)
+  p = sorted(p, key=lambda x: x.AVER_REV, reverse=True)
   
   # take top (quantity)
   p = p[:quant]
   
   #print('cat: ' + cat + ' len: ' + str(len(p)))
-  #for row in p:
-   # print('ID:' + row[IDCol] + '\tNum Revs: ' + row[NumRevCol] + '\tAvg Rev: ' + row[AverageRevCol])   
+  for row in p:
+    print('1ID:' + row.ID + '\tNum Revs: ' + str(row.NUM_REV) + '\tAvg Rev: ' + str(row.AVER_REV)+ '\tCat: ' + str(row.CAT_SUB))   
   return p
-
 
 
 if __name__ == "__main__":
