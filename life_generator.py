@@ -132,6 +132,8 @@ def main():
   vcmd = (root1.register(validate),
           '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
   
+  #fdsa
+  
   #row 1 - output quantity
   quantityText=tk.StringVar()
   quantityText.set("Enter results desired")
