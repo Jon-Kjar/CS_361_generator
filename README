@@ -1,3 +1,20 @@
+Person Generator - Derek
+
+Install pandas to your env (pip install pandas)
+
+run "python person_generator.py" in terminal. 
+
+Socket server runs on port 5425, so your client_socket function should specify this port to get data from person generator. 
+
+Output (python list) is: ["City", "State"]
+
+
+
+
+
+-----------------------------------------------------------------------------------------------------------
+
+
 Welcome to the README file for Benjamin Hutkoff's content generator. Below are instructions and FAQ for running
 the program.
 
