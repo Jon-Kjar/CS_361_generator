@@ -2,15 +2,14 @@
 # "amazon_co-ecommerce_sample.csv"
 # under license
 # https://creativecommons.org/licenses/by-sa/4.0/
-import Tkinter as tk
-import ttk as ttk
+import tkinter as tk
+import tkinter.ttk as ttk
 
 import sys
-import tkMessageBox
 import life_generator_client as lgc
 import life_generator_csv as c
 
-CLIENT_PORT = 8546 # will call my server method      
+CLIENT_PORT = 8546  # will call my server method
 
 DB_FILE = "amazon_co-ecommerce_sample.csv"
 
@@ -22,208 +21,189 @@ outputGridVals = []
 
 
 def main():
-  def generateClick():
-    inputRow = c.InputRowData("toy", typeVal.get(), quant_var.get())
-    
-    resultArray = getTop(inputRow.inputCat, inputRow.inputNumToGen)
-    
-    for x in outputGridVals:
-      x.destroy()
-       
-    tp = tk.Entry(t, width=20) 
+    def generate_click():
+        input_row = c.InputRowData("toy", type_val.get(), quantity_variable.get())
 
-    header4 = tk.Entry(t, width=20) 
-    header4.grid(row=0, column=4) 
-    header4.insert(tk.END, c.PROD_NAME) 
-    outputGridVals.append(header4)
-    
-    header5 = tk.Entry(t, width=20) 
-    header5.grid(row=0, column=5) 
-    header5.insert(tk.END, c.AVER_REV) 
-    outputGridVals.append(header5)
-    
-    header6 = tk.Entry(t, width=20) 
-    header6.grid(row=0, column=6) 
-    header6.insert(tk.END, c.NUM_REV) 
-    outputGridVals.append(header6)
-       
-    
-    header7 = tk.Entry(t, width=20) 
-    header7.grid(row=0, column=7) 
-    header7.insert(tk.END, c.SELLER_STATE) 
-    outputGridVals.append(header7)
-    
-    dic = {}
-    for i, row in enumerate(resultArray):    
-      dic[row.PROD_NAME] = i
-    # recieve column 7 data from content generator
-    print(str(dic))
-    lgClient = lgc.Life_Gen_Client(CLIENT_PORT)
-    lgClient.sendInitialInfo(dic)
-    wikiDesc = lgClient.recieveInfo()
-    
-    del lgClient
-    
-    #populate the contents of table
-    for i, row in enumerate(resultArray):      
-      tp4 = tk.Entry(t, width=20) 
-      tp4.grid(row=i+1, column=4) 
-      tp4.insert(tk.END, row.PROD_NAME) 
-      outputGridVals.append(tp4)
-      
-      tp5 = tk.Entry(t, width=20) 
-      tp5.grid(row=i+1, column=5) 
-      tp5.insert(tk.END, row.AVER_REV) 
-      outputGridVals.append(tp5)
-      
-      tp6 = tk.Entry(t, width=20) 
-      tp6.grid(row=i+1, column=6) 
-      tp6.insert(tk.END, row.NUM_REV) 
-      outputGridVals.append(tp6)
-    
-      tp7 = tk.Entry(t, width=20) 
-      tp7.grid(row=i+1, column=7) 
-      tp7.insert(tk.END, wikiDesc[row.PROD_NAME]) 
-      outputGridVals.append(tp7)
-      
-      
-    results = []
-    for row in resultArray:
-      results.append(row.createCSVLine(inputRow))
-    
-      
-    c.createCSV(results)
-  
-  # read the dataset
-  global dataset 
-  dataset = c.DatabaseData(DB_FILE)
-  if dataset is None:
-    print("you have a bad db csv file")
-  
-  #get category names
+        result_array = get_top(input_row.inputCat, input_row.inputNumToGen)
 
-  prodTypes = dataset.getAllTypes()
-  
-  # read the input file if exists
-  if len(sys.argv) > 1:
-    input1 = sys.argv[1]
-    inputData = c.InputData(input1)
-    csvOutput = []
-    for inputDataRow in inputData.data:
-      print(str(inputDataRow))
-      resultArray = getTop(inputDataRow.inputCat, int(inputDataRow.inputNumToGen))
-      print(str(resultArray))
-      results = []
-      for resultRow in resultArray:
-        results.append(resultRow.createCSVLine(inputDataRow))
-      csvOutput.extend(results)
-    c.createCSV(csvOutput)
-    return 0
-    
-  # setup the window
-  root1 = tk.Tk()
-  
-  root1.title(WINDOW_TITLE)
-  root1.geometry("700x500")
-  
-  mainframe = tk.Frame(root1)
-  mainframe.grid(column=0, row=0)
-  
-  vcmd = (root1.register(validate),
-          '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-  
-  #fdsa
-  
-  #row 1 - output quantity
-  quantityText=tk.StringVar()
-  quantityText.set("Enter results desired")
-  quantityDir=tk.Label(mainframe, textvariable=quantityText, height=4)
-  quantityDir.grid(column=1, row=1)
-  
-  quant_var=tk.IntVar()
+        for x in outputGridVals:
+            x.destroy()
 
-  inputentry = tk.Entry(mainframe, textvariable=quant_var, validate='key', validatecommand=vcmd)
-  inputentry.grid(column=2, row=1)
-  
-  #row 2
-  typeText=tk.StringVar()
-  typeText.set("Choose toy type")
-  typeDir=tk.Label(mainframe, textvariable=typeText, height=4)
-  typeDir.grid(column=1, row=2)
-  
-  typeVal = tk.StringVar(mainframe)
-  #for prodtype in prodTypes:
-  #  print(prodtype)
-  typeVal.set(prodTypes[0])
+        tp = tk.Entry(t, width=20)
 
-  #catText=tk.StringVar()
-  #catText.set(prodTypes[0]) # default value
-  typeOptions = ttk.Combobox(mainframe, textvariable=typeVal, values=prodTypes)
- 
-  #scrollbar = tk.Scrollbar(typeOptions)
-  #scrollbar.pack(side= tk.RIGHT, fill = tk.BOTH)
-  typeOptions.grid(column=2, row=2)      
-  #scrollbar.config(command = typeOptions.yview)
-  
+        header4 = tk.Entry(t, width=20)
+        header4.grid(row=0, column=4)
+        header4.insert(tk.END, c.PROD_NAME)
+        outputGridVals.append(header4)
 
-    
-  #row 3 - generate
-  generateButton = tk.Button(mainframe, text="Generate", command=generateClick)
-  generateButton.grid(column=2, row=3)
-        
-  #row 4  
-  t = tk.Entry(mainframe) 
-          
-  #outputtext = tk.Text(mainframe)
-  #outputtext.insert(tk.INSERT, output)
-  t.grid(column=1, columnspan=2, row=4)        
-  
-  #my_canvas = tk.Canvas(t)
-  #my_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
-  
-  #my_scrollbar = tk.Scrollbar(t, orient=tk.VERTICAL, command=my_canvas.yview)
-  root1.mainloop()
-  
+        header5 = tk.Entry(t, width=20)
+        header5.grid(row=0, column=5)
+        header5.insert(tk.END, c.AVER_REV)
+        outputGridVals.append(header5)
+
+        header6 = tk.Entry(t, width=20)
+        header6.grid(row=0, column=6)
+        header6.insert(tk.END, c.NUM_REV)
+        outputGridVals.append(header6)
+
+        header7 = tk.Entry(t, width=20)
+        header7.grid(row=0, column=7)
+        header7.insert(tk.END, c.SELLER_STATE)
+        outputGridVals.append(header7)
+
+        dic = {}
+        for i, row in enumerate(result_array):
+            dic[row.PROD_NAME] = i
+        # receive column 7 data from content generator
+        print(str(dic))
+        lg_client = lgc.LifeGenClient(CLIENT_PORT)
+        lg_client.send_initial_info(dic)
+        wiki_desc = lg_client.receive_info()
+
+        del lg_client
+
+        # populate the contents of table
+        for i, row in enumerate(result_array):
+            tp4 = tk.Entry(t, width=20)
+            tp4.grid(row=i + 1, column=4)
+            tp4.insert(tk.END, row.PROD_NAME)
+            outputGridVals.append(tp4)
+
+            tp5 = tk.Entry(t, width=20)
+            tp5.grid(row=i + 1, column=5)
+            tp5.insert(tk.END, row.AVER_REV)
+            outputGridVals.append(tp5)
+
+            tp6 = tk.Entry(t, width=20)
+            tp6.grid(row=i + 1, column=6)
+            tp6.insert(tk.END, row.NUM_REV)
+            outputGridVals.append(tp6)
+
+            tp7 = tk.Entry(t, width=20)
+            tp7.grid(row=i + 1, column=7)
+            tp7.insert(tk.END, wiki_desc[row.PROD_NAME])
+            outputGridVals.append(tp7)
+
+        csv_results = []
+        for row in result_array:
+            csv_results.append(row.create_csv_line(input_row))
+
+        c.create_csv(csv_results)
+
+    # read the dataset
+    global dataset
+    dataset = c.DatabaseData(DB_FILE)
+    if dataset is None:
+        print("you have a bad db csv file")
+
+    # get category names
+
+    prod_types = dataset.get_all_types()
+
+    # read the input file if exists
+    if len(sys.argv) > 1:
+        input1 = sys.argv[1]
+        input_data = c.InputData(input1)
+        csv_output = []
+        for inputDataRow in input_data.data:
+            print(str(inputDataRow))
+            result_array = get_top(inputDataRow.inputCat, int(inputDataRow.inputNumToGen))
+            print(str(result_array))
+            results = []
+            for resultRow in result_array:
+                results.append(resultRow.create_csv_line(inputDataRow))
+            csv_output.extend(results)
+        c.create_csv(csv_output)
+        return 0
+
+    # setup the window
+    root1 = tk.Tk()
+
+    root1.title(WINDOW_TITLE)
+    root1.geometry("700x500")
+
+    mainframe = tk.Frame(root1)
+    mainframe.grid(column=0, row=0)
+
+    vcmd = (root1.register(validate),
+            '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+
+    # row 1 - output quantity
+    quantity_text = tk.StringVar()
+    quantity_text.set("Enter results desired")
+    quantity_dir = tk.Label(mainframe, textvariable=quantity_text, height=4)
+    quantity_dir.grid(column=1, row=1)
+
+    quantity_variable = tk.IntVar()
+
+    input_entry = tk.Entry(mainframe, textvariable=quantity_variable, validate='key', validatecommand=vcmd)
+    input_entry.grid(column=2, row=1)
+
+    # row 2
+    type_text = tk.StringVar()
+    type_text.set("Choose toy type")
+    type_dir = tk.Label(mainframe, textvariable=type_text, height=4)
+    type_dir.grid(column=1, row=2)
+
+    type_val = tk.StringVar(mainframe)
+    type_val.set(prod_types[0])
+
+    type_options = ttk.Combobox(mainframe, textvariable=type_val, values=prod_types)
+
+    type_options.grid(column=2, row=2)
+
+    # row 3 - generate
+    generate_button = tk.Button(mainframe, text="Generate", command=generate_click)
+    generate_button.grid(column=2, row=3)
+
+    # row 4
+    t = tk.Entry(mainframe)
+
+    t.grid(column=1, columnspan=2, row=4)
+
+    root1.mainloop()
+
 
 # filter the quantity to return by only float values
 def validate(action, index, value_if_allowed,
-                 prior_value, text, validation_type, trigger_type, widget_name):
-  if value_if_allowed:
-      try:
-        int(value_if_allowed)
-        return True
-      except ValueError:
+             prior_value, text, validation_type, trigger_type, widget_name):
+    if value_if_allowed:
+        try:
+            int(value_if_allowed)
+            return True
+        except ValueError:
+            return False
+    else:
         return False
-  else:
-      return False
 
 
-# algorithm to get the top 'quant' num of products of certain type
-def getTop(cat, quant):
-  # get all of category desired
-  p = [s for s in dataset.data if s.CAT_SUB == cat]
- 
-  # sort by unique id
-  p = sorted(p, key=lambda x: x.ID)
-  
-  # sort by number of reviews
-  p = sorted(p, key=lambda x: x.NUM_REV, reverse=True)
-  
-  # take top (quantity * 10)
-  p = p[:(quant*10)]
-  
-  # sort by average review
-  p = sorted(p, key=lambda x: x.AVER_REV, reverse=True)
-  
-  # take top (quantity)
-  p = p[:quant]
-  
-  #print('cat: ' + cat + ' len: ' + str(len(p)))
-  for row in p:
-    print('1ID:' + row.ID + '\tNum Revs: ' + str(row.NUM_REV) + '\tAvg Rev: ' + str(row.AVER_REV)+ '\tCat: ' + str(row.CAT_SUB))   
-  return p
+# algorithm to get the top 'quantity' num of products of certain type
+def get_top(cat, quantity):
+    # get all of category desired
+    p = [s for s in dataset.data if s.CAT_SUB == cat]
+
+    # sort by unique id
+    p = sorted(p, key=lambda x: x.ID)
+
+    # sort by number of reviews
+    p = sorted(p, key=lambda x: x.NUM_REV, reverse=True)
+
+    # take top (quantity * 10)
+    p = p[:(quantity * 10)]
+
+    # sort by average review
+    p = sorted(p, key=lambda x: x.AVER_REV, reverse=True)
+
+    # take top (quantity)
+    p = p[:quantity]
+
+    for row in p:
+        print('1ID:' + row.ID +
+              '\tNum Revs: ' + str(row.NUM_REV) +
+              '\tAvg Rev: ' + str(row.AVER_REV) +
+              '\tCat: ' + str(row.CAT_SUB))
+    return p
 
 
 if __name__ == "__main__":
-  main()
-
+    main()
