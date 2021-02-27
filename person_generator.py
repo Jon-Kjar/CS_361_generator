@@ -146,7 +146,7 @@ def feeder_socket():
 
 
 def consumer_socket():
-    HEADERSIZE = 0
+    HEADERSIZE = 10
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((socket.gethostname(), 5423))

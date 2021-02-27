@@ -7,6 +7,7 @@ NUM_REV = "number_of_reviews"
 ID = "uniq_id" 
 AVER_REV = "average_review_rating" 
 
+
 # pulled data
 SELLER_STATE = "seller_state"
 

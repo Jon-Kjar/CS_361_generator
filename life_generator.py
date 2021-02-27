@@ -5,6 +5,7 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 
+import random
 import sys
 import life_generator_client as lgc
 import life_generator_csv as c
@@ -203,6 +204,20 @@ def get_top(cat, quantity):
               '\tAvg Rev: ' + str(row.AVER_REV) +
               '\tCat: ' + str(row.CAT_SUB))
     return p
+
+
+def get_top_random_toy():
+    # read the dataset
+    global dataset
+    dataset = c.DatabaseData(DB_FILE)
+    if dataset is None:
+        print("you have a bad db csv file")
+
+    types = dataset.get_all_types()
+    rand_type = random.choice(types)
+    res = get_top(rand_type, 1)[0]
+
+    return [res.PROD_NAME, res.CAT_SUB]
 
 
 if __name__ == "__main__":
