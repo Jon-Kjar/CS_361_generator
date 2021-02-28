@@ -10,7 +10,7 @@ import sys
 import life_generator_client as lgc
 import life_generator_csv as c
 
-CLIENT_PORT = 8546
+CLIENT_PORT = 5432
 DB_FILE = "amazon_co-ecommerce_sample.csv"
 WINDOW_TITLE = "Life Generator"
 
@@ -135,10 +135,10 @@ class LifeGeneratorGUI:
             dic[row.PROD_NAME] = i
         # receive column 7 data from content generator
         print(str(dic))
-        # lg_client = lgc.LifeGenClient(CLIENT_PORT)
-        # lg_client.send_initial_info(dic)
-        # wiki_desc = lg_client.receive_info()
-        wiki_desc = ["HEY"] * len(result_array)
+        lg_client = lgc.LifeGenClient(CLIENT_PORT)
+        #lg_client.send_initial_info(dic)
+        wiki_desc = lg_client.receive_info()
+        #wiki_desc = ["HEY"] * len(result_array)
         # del lg_client
 
         # populate the contents of table
@@ -161,7 +161,7 @@ class LifeGeneratorGUI:
             tp7 = tk.Entry(self.entry_gui, width=20)
             tp7.grid(row=i + 1, column=7)
             # tp7.insert(tk.END, wiki_desc[row.PROD_NAME])
-            tp7.insert(tk.END, wiki_desc[i])
+            tp7.insert(tk.END, wiki_desc)
             outputGridVals.append(tp7)
 
         csv_results = []

@@ -20,15 +20,23 @@ class LifeGenClient:
         self.s.send(data_pickled)
 
     def receive_info(self):
-        full_msg = None
+        full_msg = b''
         msg_object = None
+        new_msg = True
+        HEADERSIZE = 10
         while True:
-            msg = self.s.recv(8)
-            if len(msg) <= 0:
+            msg = self.s.recv(16)
+            if new_msg:
+                print(f"new message length: {msg[:HEADERSIZE]}")
+                msglen = int(msg[:HEADERSIZE])
+                new_msg = False
+            full_msg += msg
+
+            if len(full_msg) - HEADERSIZE == msglen:
+                print("full msg received")
                 break
-            full_msg += msg.decode("utf-8")
 
         if full_msg is not None:
-            msg_object = pickle.loads(full_msg)
+            msg_object = pickle.loads(full_msg[HEADERSIZE:])
 
         return msg_object
