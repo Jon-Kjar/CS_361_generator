@@ -130,7 +130,7 @@ def parse_data(csvData, qty):
 # https://www.youtube.com/watch?v=Lbfe3-v7yE0&t=511s,
 # https://www.youtube.com/watch?v=WM1z8soch0Q
 def feeder_socket():
-    HEADERSIZE = 0
+    HEADERSIZE = 10
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((socket.gethostname(), 5425))
     s.listen(5)
