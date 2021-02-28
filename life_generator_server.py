@@ -1,7 +1,7 @@
 import socket
 import pickle
 import life_generator as lg
-import sys
+
 
 class LifeGenServer:
     def __init__(self, port):
@@ -27,13 +27,11 @@ class LifeGenServer:
             client_socket, address = self.s.accept()
             print("Connection from " + str(address[0]) + " has been established.")
 
-            #  input_item_type	input_item_category	input_number_to_generate
-            #  toys	            Dogs	              3
-            msg = lg.get_top_random_toy()
+            data = lg.get_top_random_toy()
 
-            data = pickle.dumps(msg)
-            print("DATA\t" + str(data))
-            msg = bytes(f'{len(data):<{10}}', "utf-8") + data
+            msg = pickle.dumps(data)
+            print("DATA\t" + str(msg))
+            msg = bytes(f'{len(msg):<{10}}', "utf-8") + msg
             client_socket.send(msg)
 
 
