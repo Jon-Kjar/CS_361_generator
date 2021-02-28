@@ -41,7 +41,7 @@ input.
 
 Q: The search.csv is blank? Why?
 
-A: The search.csv is truncated (deleted) one the file has been scanned.
+A: The search.csv is truncated (deleted) once the file has been scanned.
 
 Q: My CSV is not loading correctly?
 

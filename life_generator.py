@@ -10,7 +10,7 @@ import sys
 import life_generator_client as lgc
 import life_generator_csv as c
 
-CLIENT_PORT = 8546  # will call my server method
+CLIENT_PORT = 5432  # will call my server method
 
 DB_FILE = "amazon_co-ecommerce_sample.csv"
 

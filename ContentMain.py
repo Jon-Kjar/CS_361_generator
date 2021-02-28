@@ -1,6 +1,6 @@
 #Created By Benjamin Hutkoff  #pass back dictionary with an index on it (turn output into a string) #city&state as a list #use pickle to unpickle
 #Content Generator
-#File Name main.py
+#File Name ContentMain.py
 #Date: 2/16/21
 
 # tkinter library
@@ -9,12 +9,15 @@ import wikipedia
 import csv  #use to extract output csv to string or something
 
 
+
 #global definitions
 global searchedParagraph
 global searchedParagraph2
 global content
+global entry3
 
 #function definitions
+
 
 def read_input():
 
@@ -116,11 +119,7 @@ def read_input():
     canvas3.create_window(200, 240, window=button9)
 
 
-
-
-def write_import():
-    global content
-    term2 = entry3.get()
+def write_import_batch(term2 = "puppydogs"):
     print(wikipedia.search(f"{term2}", results=1, suggestion=False))
     f = open("search.csv", "a", encoding="utf-8")
     # content = (wikipedia.page("Puppy(dog)").content)
@@ -135,6 +134,25 @@ def write_import():
     print(content)  # prints the content to the screen
 
     f.close()  # closes the original file
+
+def write_import(): #sets term2 default to puppydogs
+    global content
+    term2 = entry3.get()
+    write_import_batch(term2)
+
+def write_run_batch(term = "breeds"):
+    global searchedParagraph
+    file = open('search.csv', "r+")
+    for line in file:
+        line.strip().split('/n')
+        if term in line:
+            print(line)
+            searchedParagraph = 'a'  # creates a string variable
+            searchedParagraph = line  # sets searchedParagraph equal to line contents
+
+    file.truncate(0)  # deletes all the file data in the search.csv
+    file.close()
+
 
 def write_run():
     print("Running Program!")
@@ -163,20 +181,14 @@ def write_run():
     def getUI():
         global searchedParagraph
         x1 = entry1.get()
-        term = entry1.get()            #make this user input
-        file = open('search.csv', "r+")
-        for line in file:
-            line.strip().split('/n')
-            if term in line:
-                print(line)
-                searchedParagraph = 'a'  # creates a string variable
-                searchedParagraph = line #sets searchedParagraph equal to line contents
-
-        file.truncate(0)  #deletes all the file data in the search.csv
-        file.close()
+        term = entry1.get()  # make this user input
+        write_run_batch(term)
+        #content in between
 
         label7 = tk.Label(root, text=searchedParagraph, font=('helvetica', 6, 'bold'), wraplength=300)
         canvas1.create_window(200, 230, window=label7)
+
+
 
     def download():
         global searchedParagraph
@@ -205,49 +217,61 @@ def write_run():
 
     root.mainloop()
 
-#start of canvas2 buttons abd input.
-root = tk.Tk()
+def getsearchedParagraph():
+    global searchedParagraph
+    write_import_batch()
+    write_run_batch()
+    return searchedParagraph
 
-canvas2 = tk.Canvas(root, width=400, height=300, relief='raised')
-canvas2.pack()
+def identifiers():
+    #start of canvas2 buttons abd input.
+    root = tk.Tk()
 
-label1 = tk.Label(root, text='1. Enter a keyword and click import.')
-label1.config(font=('helvetica', 14))
-canvas2.create_window(200, 25, window=label1)
+    canvas2 = tk.Canvas(root, width=400, height=300, relief='raised')
+    canvas2.pack()
 
-label4 = tk.Label(root, text='2. Click Run.')
-label4.config(font=('helvetica', 14))
-canvas2.create_window(200, 65, window=label4)
+    label1 = tk.Label(root, text='1. Enter a keyword and click import.')
+    label1.config(font=('helvetica', 14))
+    canvas2.create_window(200, 25, window=label1)
 
-label5 = tk.Label(root, text='Optional: Click csv import to upload a csv file.')
-label5.config(font=('helvetica', 14))
-canvas2.create_window(200, 105, window=label5)
+    label4 = tk.Label(root, text='2. Click Run.')
+    label4.config(font=('helvetica', 14))
+    canvas2.create_window(200, 65, window=label4)
 
-button3 = tk.Button(root, text='QUIT', command=quit, bg='brown', fg='white',
+    label5 = tk.Label(root, text='Optional: Click csv import to upload a csv file.')
+    label5.config(font=('helvetica', 14))
+    canvas2.create_window(200, 105, window=label5)
+
+    button3 = tk.Button(root, text='QUIT', command=quit, bg='brown', fg='white',
+                            font=('helvetica', 9, 'bold'))
+    canvas2.create_window(120, 220, window=button3)
+    #
+    button4 = tk.Button(root, text='Run', command=write_run, bg='blue', fg='white',
+                          font=('helvetica', 9, 'bold'))
+    canvas2.create_window(280, 220, window=button4)
+    #
+    button5 = tk.Button(root, text='Import From Wiki', command=write_import, bg='green', fg='white',
                         font=('helvetica', 9, 'bold'))
-canvas2.create_window(120, 220, window=button3)
-#
-button4 = tk.Button(root, text='Run', command=write_run, bg='blue', fg='white',
-                      font=('helvetica', 9, 'bold'))
-canvas2.create_window(280, 220, window=button4)
-#
-button5 = tk.Button(root, text='Import From Wiki', command=write_import, bg='green', fg='white',
-                    font=('helvetica', 9, 'bold'))
-canvas2.create_window(200, 220, window=button5)
+    canvas2.create_window(200, 220, window=button5)
 
-button7 = tk.Button(root, text='Upload CSV', command=read_input, bg='orange', fg='white',
-                        font=('helvetica', 9, 'bold'))
-canvas2.create_window(200, 260, window=button7)
+    button7 = tk.Button(root, text='Upload CSV', command=read_input, bg='orange', fg='white',
+                            font=('helvetica', 9, 'bold'))
+    canvas2.create_window(200, 260, window=button7)
 
-#user input
-entry3 = tk.Entry(root)
-canvas2.create_window(200, 160, window=entry3)
+    #user input
+    global entry3
+    entry3 = tk.Entry(root)
+    canvas2.create_window(200, 160, window=entry3)
 
 
-#end of canvas2 buttons and input.
+    #end of canvas2 buttons and input.
 
 
-root.mainloop()
+    root.mainloop()
 
+def main():
+    identifiers()
 
+if __name__ == "__main__":
+    main()
 
