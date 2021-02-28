@@ -19,6 +19,7 @@ STATE_KEY = {"ak": "Arkansas", "az": "Arizona", "co": "Colorado", "hi": "Hawaii"
 
 # Global storage for generated output to later export via GUI to output.csv
 df = pd.DataFrame()
+#dfToy = pd.DataFrame()
 
 
 #########################################################################################
@@ -108,7 +109,7 @@ def data_read(fileName):
 
     # if statement for wyoming exception (no post codes in wyoming data).
     # pandas dropna command to remove data that are missing the required fields (Number, city, street, postcode)
-    if fileName == "wy.csv":
+    if fileName == "./datafiles_persongen/wy.csv":
         cleanData = data.dropna(subset=['NUMBER', 'STREET'])
     else:
         cleanData = data.dropna(subset=['NUMBER', 'CITY', 'STREET', 'POSTCODE'])
@@ -164,13 +165,18 @@ def consumer_socket():
         if len(full_msg) - HEADERSIZE == msglen:
             print("full msg received")
 
-            d = pickle.loads(full_msg[HEADERSIZE:])
-            pandasTree.delete(*pandasTree.get_children())
-            for index, row in d.iterrows():
-                pandasTree.insert("", 'end', values=list(row))
-            outputFrame.config(bg="#b3ffb3")
-            outputLabel.config(text="Complete!", bg="#b3ffb3")
+            lifeGen = pickle.loads(full_msg[HEADERSIZE:])
+            process_lifegen_data(lifeGen)
             break
+
+def process_lifegen_data(lifeGen):
+    toy = lifeGen[0]
+    category = lifeGen[1]
+    state = stateVarToy.get()
+    rawInput = outputNumToy.get()
+    generate_gui_prize(toy, category)
+    generate_lifegen_gui_output()
+    return
 
 
 def output_for_content_generator():
@@ -202,21 +208,14 @@ def tkinter_generate_csv():
     outputLabel.config(text="Success! Exported to output.csv", bg="#b3ffb3")
     return
 
-
-# function to generate randomly generated addresses to GUI
-def generateOutput():
-    # get data from tkinter GUI
-    state = stateVar.get()
-    raw_number = outputNum.get()
-    int_output = 0
-
-    # try-except loop for GUI input validation
+#function to validate gui inputs
+def gui_input_validation(rawNumber):
     while True:
         try:
-            int_output = int(raw_number)
-            break
+            intOutput = int(rawNumber)
+            return True
         except ValueError:
-            if raw_number == "":
+            if rawNumber == "":
                 outputFrame.config(bg="#ff9999")
                 outputLabel.config(text="You must specify number to output", bg="#ff9999")
                 return
@@ -225,30 +224,69 @@ def generateOutput():
                 outputLabel.config(text="Number to output must be Integer", bg="#ff9999")
                 return
 
-    state = state.lower()
-    csvData = find_data_file(state)
-
-    # validate input qty
-    if int_output > len(csvData):
+def gui_output_qty_validation(intOutput, csvData):
+    if intOutput > len(csvData):
         outputFrame.config(bg="#ff9999")
         outputLabel.config(text="Input is larger than number of valid addresses. There are: " + str(
             len(csvData)) + " valid addresses", bg="#ff9999")
-
+        return False
     else:
-        parsedData = parse_data(csvData, int_output)
-        global df
-        df = parsedData
-        update_pandas_table(parsedData)
+        return True
+
+def generate_persongen_gui_output():
+    state = stateVar.get()
+    rawInput = outputNum.get()
+    state = state.lower()
+    target = "personGen"
+    generate_gui_output(state, rawInput, target)
+    return
+
+def generate_lifegen_gui_output():
+    state = stateVarToy.get()
+    rawInput = outputNumToy.get()
+    state = state.lower()
+    target = "lifeGen"
+    generate_gui_output(state, rawInput, target)
     return
 
 
-def update_pandas_table(parsedData):
+
+def generate_gui_output(state, rawInput, target):
+    # get correct datafile
+    csvData = find_data_file(state)
+    if gui_input_validation(rawInput):
+        intOutput = int(rawInput)
+        # validate input qty, print to gui if true
+        if gui_output_qty_validation(intOutput, csvData):
+            parsedData = parse_data(csvData, intOutput)
+            global df
+            df = parsedData
+            update_pandas_table(parsedData, target)
+    return
+
+
+def generate_gui_prize(toy, category):
+    prizeLabel.config(text=toy)
+    prizeCategory.config(text=category)
+    return
+
+
+def update_pandas_table(parsedData, target):
     # https: // tkdocs.com / tutorial / tree.html
-    pandasTree.delete(*pandasTree.get_children())
+    if target == "personGen":
+        tree = pandasTree
+        frame = outputFrame
+        label = outputLabel
+    else:
+        tree = pandasTreeToy
+        frame = outputFrameToy
+        label = outputLabelToy
+
+    tree.delete(*tree.get_children())
     for index, row in parsedData.iterrows():
-        pandasTree.insert("", 'end', values=list(row))
-    outputFrame.config(bg="#b3ffb3")
-    outputLabel.config(text="Complete!", bg="#b3ffb3")
+        tree.insert("", 'end', values=list(row))
+    frame.config(bg="#b3ffb3")
+    label.config(text="Complete!", bg="#b3ffb3")
 
 #########################################################################################
 #                    initialize tkinter GUI
@@ -267,7 +305,7 @@ toyPromoteTab = ttk.Frame(tabMenu)
 tabMenu.add(toyPromoteTab, text="Toy Give-away Promotion")
 tabMenu.pack(expand=1, fill="both")
 
-# frames
+# frames persongen
 topFrame = Frame(personGenTab)
 topFrame.pack()
 bottomFrame = Frame(personGenTab)
@@ -277,20 +315,43 @@ outputFrame.pack(fill="x")
 tableFrame = Frame(personGenTab, width=100)
 tableFrame.pack(side=BOTTOM)
 
+# frames lifegen Tab
+topFrameToy = Frame(toyPromoteTab)
+topFrameToy.pack()
+bottomFrameToy = Frame(toyPromoteTab)
+bottomFrameToy.pack()
+outputFrameToy = Frame(toyPromoteTab)
+outputFrameToy.pack(fill="x")
+prizeFrame = Frame(toyPromoteTab)
+prizeFrame.pack()
+tableFrameToy = Frame(toyPromoteTab, width=100)
+tableFrameToy.pack(side=BOTTOM)
 
-# lables
+# lables personGen
 titleLabel = Label(topFrame, text="Person Generator - Prototype", font=25)
 titleLabel.pack(padx=20, pady=20)
 outputLabel = Label(outputFrame, text="")
 outputLabel.pack(pady=5)
 
+#labels lifeGen
+titleLabelToy = Label(topFrameToy, text="Toy Promotion Tab", font=25)
+titleLabelToy.pack(padx=20, pady=20)
+outputLabelToy = Label(outputFrameToy, text="")
+outputLabelToy.pack(pady=5)
+prizeLabel = Label(prizeFrame, text="Prize: ")
+prizeLabel.pack()
+prizeCategory = Label(prizeFrame, text="Category: ")
+prizeCategory.pack()
 
-# treeview scrollbar
+# treeview scrollbar personGen
 pandasTreeScroll = Scrollbar(tableFrame)
 pandasTreeScroll.pack(side=RIGHT, fill=Y)
 
+# treeview scrollbar lifeGen
+pandasTreeScrollToy = Scrollbar(tableFrameToy)
+pandasTreeScrollToy.pack(side=RIGHT, fill=Y)
 
-# display pandas dataframe w/ tkinter treeview widget
+# personGen display pandas dataframe w/ tkinter treeview widget
 pandasTree = ttk.Treeview(tableFrame, yscrollcommand=pandasTreeScroll.set)
 pandasTree.pack()
 cols = ['NUMBER', 'STREET', 'UNIT', 'CITY', 'DISTRICT', 'REGION', 'POSTCODE']
@@ -301,8 +362,18 @@ for i in cols:
     pandasTree.heading(i, text=i, anchor="center")
 pandasTreeScroll.config(command=pandasTree.yview)
 
+#lifeGen display pandas dataframe w/ tkinter treeview widget
+pandasTreeToy = ttk.Treeview(tableFrameToy, yscrollcommand=pandasTreeScrollToy.set)
+pandasTreeToy.pack()
+cols = ['NUMBER', 'STREET', 'UNIT', 'CITY', 'DISTRICT', 'REGION', 'POSTCODE']
+pandasTreeToy["columns"] = cols
+pandasTreeToy["show"] = 'headings'
+for i in cols:
+    pandasTreeToy.column(i, anchor="center", minwidth=100, width=125, stretch=True)
+    pandasTreeToy.heading(i, text=i, anchor="center")
+pandasTreeScrollToy.config(command=pandasTree.yview)
 
-# Dropdown state menu
+# person Gen Dropdown state menu
 stateLabel = Label(topFrame, text="Select State: ")
 stateLabel.pack(side=LEFT)
 states = ['AK', 'AZ', 'CO', 'HI', 'ID', 'MT', 'NV', 'OR', 'UT', 'WA', 'WY']
@@ -311,28 +382,42 @@ stateVar.set(states[0])
 stateSelect = OptionMenu(topFrame, stateVar, *states)
 stateSelect.pack(side=LEFT, padx=(5, 20))
 
+#lifeGen drowdown state menu
+stateLabelToy = Label(topFrameToy, text="Select State: ")
+stateLabelToy.pack(side=LEFT)
+statesToy = ['AK', 'AZ', 'CO', 'HI', 'ID', 'MT', 'NV', 'OR', 'UT', 'WA', 'WY']
+stateVarToy = StringVar(root)
+stateVarToy.set(statesToy[0])
+stateSelectToy = OptionMenu(topFrameToy, stateVarToy, *statesToy)
+stateSelectToy.pack(side=LEFT, padx=(5, 20))
 
-# Number to generate (input box)
+
+# Persongen Number to generate (input box)
 outputNumLabel = Label(topFrame, text="Number to Generate (int): ")
 outputNumLabel.pack(side=LEFT, padx=(20, 5))
 outputNum = Entry(topFrame)
 outputNum.pack(side=LEFT)
 
+# LifeGen Number to generate (input box)
+outputNumLabelToy = Label(topFrameToy, text="Number to Generate (int): ")
+outputNumLabelToy.pack(side=LEFT, padx=(20, 5))
+outputNumToy = Entry(topFrameToy)
+outputNumToy.pack(side=LEFT)
 
 # Buttons w/ function calls
-genButton = Button(bottomFrame, text="Generate", bg="#cce6ff", height=4, width=30, command=generateOutput)
+genButton = Button(bottomFrame, text="Generate", bg="#cce6ff", height=4, width=30, command=generate_persongen_gui_output)
 genButton.pack(side=LEFT, padx=10, pady=20)
-csvButton = Button(bottomFrame, text="Get Data From SocketApp2", bg="#cce6ff", height=4, width=30, command=consumer_socket)
+csvButton = Button(bottomFrame, text="Export Result to CSV", bg="#cce6ff", height=4, width=30, command=tkinter_generate_csv)
 csvButton.pack(side=LEFT, padx=10, pady=20)
+
+genButtonToy = Button(bottomFrameToy, text="Generate Prize and Winners!", bg="#cce6ff", height=4, width=30, command=consumer_socket)
+genButtonToy.pack(side=LEFT, padx=10, pady=20)
 
 
 
 if len(sys.argv) > 1:
     print("Generating file...")
     output_csv_from_file()
-
-
-
 
 else:
     if __name__ == '__main__':
@@ -342,7 +427,6 @@ else:
         p2.start()
         p1.start()
 
-        print("Running")
 
         while True:
             if not p1.is_alive():
