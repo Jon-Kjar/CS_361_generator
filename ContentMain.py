@@ -7,7 +7,8 @@
 import tkinter as tk
 import wikipedia
 import csv  #use to extract output csv to string or something
-
+import socket #for infromation transfer between code
+import pickle
 
 
 #global definitions
@@ -18,6 +19,40 @@ global entry3
 
 #function definitions
 
+def Client(): #client function for information from person gen
+    HEADERSIZE = 10
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((socket.gethostname(), 5425))
+
+    full_msg = b''
+    new_msg = True
+    while True:
+        msg = s.recv(16)
+        if new_msg:
+            print(f"new message length: {msg[:HEADERSIZE]}")
+            msglen = int(msg[:HEADERSIZE])
+            new_msg = False
+        full_msg += msg
+
+        if len(full_msg) - HEADERSIZE == msglen:
+            print("full msg received")
+            new_object = pickle.loads(full_msg[HEADERSIZE:])
+            print(new_object)
+
+            # for i in range(0,2):
+            primaryString = '"' + new_object[0] + ", " + new_object[1] + '"'
+            secondaryString = ',population'
+            f = open('input.csv', "a")  # Opens input.csv
+            f.truncate(17)
+            f.write("\n")
+            # f.write(new_object[i] + ",")  # Prints the line searched for to the input.csv file.
+            f.write(primaryString)
+            f.write(secondaryString)
+
+            f.close()
+
+            break
 
 def read_input():
 
@@ -76,13 +111,14 @@ def read_input():
                 print("Primary Keyword is: " + Primary + ". Secondary keyword is: " + Secondary + ".")
                 #needs a way to truncate the second line after primary and secondary assignment
 
-            f = open("search.csv", "a")
+            f = open("search.csv", "a", encoding="utf-8", errors='ignore')
             # content = (wikipedia.page("Puppy(dog)").content)
-            content = (wikipedia.page(f"{Primary}").content)
+            content = (wikipedia.page(f"{Primary}", auto_suggest=True).content)
+            content.encode("utf-8")
             f.write(content)
             f.close()
 
-            f = open('search.csv', 'r')  # opens the search.csv file
+            f = open('search.csv', 'r', errors='ignore')  # opens the search.csv file
 
             content = f.read()  # reads the search.csv file into a variable called content
 
@@ -91,7 +127,7 @@ def read_input():
             f.close()  # closes the original file
 
             term = Secondary  # make this user input
-            file = open('search.csv', "r+")
+            file = open('search.csv', "r+", errors='ignore')
             for line in file:
                 line.strip().split('/n')
                 if term in line:
@@ -119,9 +155,10 @@ def read_input():
     canvas3.create_window(200, 240, window=button9)
 
 
+
 def write_import_batch(term2 = "puppydogs"):
     print(wikipedia.search(f"{term2}", results=1, suggestion=False))
-    f = open("search.csv", "a", encoding="utf-8")
+    f = open("search.csv", "a", encoding="utf-8", errors='ignore')
     # content = (wikipedia.page("Puppy(dog)").content)
     content = (wikipedia.page(f"{term2}").content)
     f.write(content)
@@ -178,6 +215,7 @@ def write_run():
     canvas1.create_window(200, 100, window=entry2)
 
 
+
     def getUI():
         global searchedParagraph
         x1 = entry1.get()
@@ -213,6 +251,8 @@ def write_run():
     label4 = tk.Label(root, text='Enter a secondary keyword:')
     label4.config(font=('helvetica', 14))
     canvas1.create_window(200, 100, window=label4)
+
+
 
 
     root.mainloop()
@@ -257,6 +297,10 @@ def identifiers():
     button7 = tk.Button(root, text='Upload CSV', command=read_input, bg='orange', fg='white',
                             font=('helvetica', 9, 'bold'))
     canvas2.create_window(200, 260, window=button7)
+
+    button20 = tk.Button(root, text='Socket', command=Client, bg='purple', fg='white',
+                         font=('helvetica', 9, 'bold'))
+    canvas2.create_window(200, 280, window=button20)
 
     #user input
     global entry3
