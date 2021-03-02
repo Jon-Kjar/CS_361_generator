@@ -1,15 +1,18 @@
+# utilized the following for help
+# url: https://pythonprogramming.net/buffering-streaming-data-sockets-tutorial-python-3/
 import socket
 import pickle
 import life_generator as lg
+
+SERVER_PORT = 5423
 
 
 class LifeGenServer:
     def __init__(self, port):
         """
-        :param port: 5423
+        Initiates everything needed for the socket listening
+        :param port: port to communicate with the client
         """
-        msg = lg.get_top_random_toy()
-        print(msg)
         self.port = port
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind((socket.gethostname(), self.port))
@@ -20,24 +23,31 @@ class LifeGenServer:
         print('<Server> Destructor called')
         self.s.close()
 
-    def start_listening(self):
-
+    def listening(self):
+        """
+        Starts the loop for communicating with a client
+        :return: None
+        """
         while True:
-            # now our endpoint knows about the OTHER endpoint.
             client_socket, address = self.s.accept()
             print("Connection from " + str(address[0]) + " has been established.")
 
             data = lg.get_top_random_toy()
 
             msg = pickle.dumps(data)
-            print("DATA\t" + str(msg))
+
+            # prepend message length to message
             msg = bytes(f'{len(msg):<{10}}', "utf-8") + msg
             client_socket.send(msg)
 
 
 def main():
-    lgs = LifeGenServer(5423)
-    lgs.start_listening()
+    """
+    Initiates the life generator server
+    :return: None
+    """
+    lgs = LifeGenServer(SERVER_PORT)
+    lgs.listening()
 
 
 if __name__ == "__main__":

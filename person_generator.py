@@ -52,7 +52,7 @@ def input_csv_validate():
 # Function used to read input.csv and send variables to file input if-statement.
 def input_csv_read(fileName):
     dtype = {'input_state': "string", 'input_number_to_generate': int}
-    data = pd.read_csv(fileName, dtype=dtype)
+    data = pd._read_csv(fileName, dtype=dtype)
     parsedInput = data.values[0]
     return parsedInput
 
@@ -105,7 +105,7 @@ def find_data_file(state):
 def data_read(fileName):
     dtype = {'NUMBER': "string", 'STREET': "string", 'UNIT': "string", 'CITY': "string", 'DISTRICT': "string",
              'REGION': "string", 'POSTCODE': "string"}
-    data = pd.read_csv(fileName, dtype=dtype)
+    data = pd._read_csv(fileName, dtype=dtype)
 
     # if statement for wyoming exception (no post codes in wyoming data).
     # pandas dropna command to remove data that are missing the required fields (Number, city, street, postcode)

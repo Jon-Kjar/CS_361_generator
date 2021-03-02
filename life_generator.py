@@ -18,12 +18,6 @@ dataset = None
 outputGridVals = []
 
 
-def main():
-    lgg = LifeGeneratorGUI()
-    lgg.create_gui()
-
-
-
 
 class LifeGeneratorGUI:
     entry_gui = None
@@ -42,12 +36,14 @@ class LifeGeneratorGUI:
 
         # run from input csv file and end program
         if len(sys.argv) > 1:
-            self.run_batch()
-            return
+            self.__run_batch()
 
 
     def create_gui(self):
-        # setup the window
+        """
+        sets up the GUI window
+        :return: None
+        """
         root1 = tk.Tk()
 
         root1.title(WINDOW_TITLE)
@@ -56,7 +52,7 @@ class LifeGeneratorGUI:
         mainframe = tk.Frame(root1)
         mainframe.grid(column=0, row=0)
 
-        vcmd = (root1.register(validate), '%P')
+        validate_command = (root1.register(validate), '%P')
 
         # row 1 - output quantity
         quantity_text = tk.StringVar()
@@ -66,7 +62,7 @@ class LifeGeneratorGUI:
 
         self.quantity_variable = tk.IntVar()
 
-        input_entry = tk.Entry(mainframe, textvariable=self.quantity_variable, validate='key', validatecommand=vcmd)
+        input_entry = tk.Entry(mainframe, textvariable=self.quantity_variable, validate='key', validatecommand=validate_command)
         input_entry.grid(column=2, row=1)
 
         # row 2
@@ -98,9 +94,14 @@ class LifeGeneratorGUI:
         outputGridVals.append(header)
 
     def generate_click(self):
+        """
+        Creates an output csv given the info in the GUI
+        :return: None
+        """
+        # capture the GUI info
         input_row = c.InputRowData("toy", self.type_val.get(), self.quantity_variable.get())
 
-        result_array = get_top(input_row.inputCat, input_row.inputNumToGen)
+        result_array = get_top(input_row.input_cat, input_row.input_num_to_generate)
 
         # clear out all old values
         for x in outputGridVals:
@@ -110,7 +111,7 @@ class LifeGeneratorGUI:
         self.__create_entry(c.PROD_NAME, 4)
         self.__create_entry(c.AVER_REV, 5)
         self.__create_entry(c.NUM_REV, 6)
-        self.__create_entry(c.SELLER_STATE, 7)
+        self.__create_entry(c.DOG_DATA, 7)
 
         # receive column 7 data from content generator
         lg_client = lgc.LifeGenClient(CLIENT_PORT)
@@ -129,24 +130,29 @@ class LifeGeneratorGUI:
 
         c.create_csv(csv_results)
 
-    def run_batch(self):
+    def __run_batch(self):
+        """
+        Creates the output csv file from an input csv file
+        :return: None
+        """
         input1 = sys.argv[1]
         input_data = c.InputData(input1)
         csv_output = []
+
+        # for each row of the input file find the values requested
         for inputDataRow in input_data.data:
-            print(str(inputDataRow))
-            result_array = get_top(inputDataRow.inputCat, int(inputDataRow.inputNumToGen))
-            print(str(result_array))
+            result_array = get_top(inputDataRow.input_cat, int(inputDataRow.input_num_to_generate))
             results = []
             for resultRow in result_array:
                 results.append(resultRow.create_csv_line(inputDataRow))
             csv_output.extend(results)
+
         c.create_csv(csv_output)
 
 
 def validate(value_if_allowed):
     """
-    filter the quantity to return by only float values
+    filter the quantity to return by only int values
     :param value_if_allowed:
     :return:
     """
@@ -167,9 +173,9 @@ def get_top(cat, quantity):
     4. take top (quantity * 10)
     5. sort by average review
     6. take top (quantity)
-    :param cat:
-    :param quantity:
-    :return:
+    :param cat: Category to sort
+    :param quantity: quantity to return
+    :return: items that fulfill the sort
     """
     p = [s for s in dataset.data if s.CAT_SUB == cat]
 
@@ -187,8 +193,9 @@ def get_top(cat, quantity):
 
 def get_top_random_toy():
     """
-
-    :return:
+    Function to interact with Person Generator client.
+    Get's the top toy from a random category
+    :return: array of the product name and the product category
     """
     # read the dataset
     global dataset
@@ -201,6 +208,14 @@ def get_top_random_toy():
     res = get_top(rand_type, 1)[0]
 
     return [res.PROD_NAME, res.CAT_SUB]
+
+
+def main():
+    lgg = LifeGeneratorGUI()
+    if len(sys.argv) > 1:
+        return
+
+    lgg.create_gui()
 
 
 if __name__ == "__main__":
