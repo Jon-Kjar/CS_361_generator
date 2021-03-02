@@ -17,9 +17,9 @@ random.seed(a=None)
 STATE_KEY = {"ak": "Arkansas", "az": "Arizona", "co": "Colorado", "hi": "Hawaii", "id": "Idaho",
              "mt": "Montana", "nv": "Nevada", "or": "Oregon", "ut": "Utah", "wa": "Washington", "wy": "Wyoming"}
 
-# Global storage for generated output to later export via GUI to output.csv
+# Global pandas dataframe storage for generated output to later export via GUI to output.csv
 df = pd.DataFrame()
-#dfToy = pd.DataFrame()
+
 
 
 #########################################################################################
@@ -37,6 +37,7 @@ def output_csv_from_file():
     return
 
 
+#calls validation functions
 def input_csv_validate():
     inputData = input_csv_read("input.csv")
     inputState = inputData[0]
@@ -70,7 +71,7 @@ def input_csv_state_validate(state):
     sys.exit()
 
 
-# validation for input.csv qty
+# fns to confirm input is int and qty does not exceed available data
 def input_csv_num_validate(qty):
     while True:
         try:
@@ -116,6 +117,7 @@ def data_read(fileName):
     return cleanData
 
 
+# fn to randomly pick addresses from data w/ no duplicates
 def parse_data(csvData, qty):
     rndIdx = random.sample(range(len(csvData)), qty)
     parsedData = csvData.iloc[rndIdx]
@@ -125,57 +127,65 @@ def parse_data(csvData, qty):
 #########################################################################################
 #                    functions for cross-app comms
 #########################################################################################
-
-
-# code based on following source for socket tutorials for next 2 functions:
-# https://www.youtube.com/watch?v=Lbfe3-v7yE0&t=511s,
+# code based on following source for socket tutorials for next 3 functions:
+# https://www.youtube.com/watch?v=Lbfe3-v7yE0&t=511s
+# https://www.youtube.com/watch?v=8A4dqoGL62E
 # https://www.youtube.com/watch?v=WM1z8soch0Q
+
+
 def feeder_socket():
-    HEADERSIZE = 10
+    HEADERSIZE = 10 #corresponds to msg size of 10000 characters
+
+    #start listener on localhost and socket 5425
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((socket.gethostname(), 5425))
     s.listen(5)
+
+    #send message when client connection detected
     while True:
         clientsocket, address = s.accept()
         print(f"connection from {address} established")
 
         output_msg = output_for_content_generator()
         msg = pickle.dumps(output_msg)
-        msg = bytes(f'{len(msg):<{HEADERSIZE}}', "utf-8") + msg
+        msg = bytes(f'{len(msg):{HEADERSIZE}}', "utf-8") + msg  #append header to msg
 
         clientsocket.send(msg)
 
 
 def consumer_socket():
-    HEADERSIZE = 10
+    HEADERSIZE = 10 #corresponds to max msg size of 10000 characters
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((socket.gethostname(), 5423))
+    s.connect((socket.gethostname(), 5423)) #connect to other microservice on port 5423
 
     full_msg = b''
     new_msg = True
+    process_consumer_socket_msg(HEADERSIZE, full_msg, new_msg, s)
+
+
+def process_consumer_socket_msg(HEADERSIZE, full_msg, new_msg, s):
     while True:
-        msg = s.recv(16)
+        msg = s.recv(10) #recv msg in chuncks of 10 bytes
+
+        #upon msg receipt, get msglen from headersize
         if new_msg:
-            print(f"new message length: {msg[:HEADERSIZE]}")
             msglen = int(msg[:HEADERSIZE])
             new_msg = False
+
         full_msg += msg
 
+        #use HEADERSIZE to determine when msg recipt is finished
         if len(full_msg) - HEADERSIZE == msglen:
-            print("full msg received")
-
-            lifeGen = pickle.loads(full_msg[HEADERSIZE:])
+            lifeGen = pickle.loads(full_msg[HEADERSIZE:]) #convert data from bytes to python obj
             process_lifegen_data(lifeGen)
             break
+
 
 def process_lifegen_data(lifeGen):
     toy = lifeGen[0]
     category = lifeGen[1]
-    state = stateVarToy.get()
-    rawInput = outputNumToy.get()
-    generate_gui_prize(toy, category)
-    generate_lifegen_gui_output()
+    generate_lifegen_gui_output(toy, category)
     return
 
 
@@ -208,30 +218,54 @@ def tkinter_generate_csv():
     outputLabel.config(text="Success! Exported to output.csv", bg="#b3ffb3")
     return
 
-#function to validate gui inputs
-def gui_input_validation(rawNumber):
+
+#determine which GUI objects to manipulate and return to requesting function
+def target_selection(target):
+    if target == "lifeGen":
+        frame = outputFrameToy
+        label = outputLabelToy
+        tree = pandasTreeToy
+
+    else:
+        frame = outputFrame
+        label = outputLabel
+        tree = pandasTree
+    return frame, label, tree
+
+
+def gui_input_validation(rawNumber, target):
+    targets = target_selection(target)
+    frame = targets[0]
+    label = targets[1]
     while True:
         try:
             intOutput = int(rawNumber)
             return True
         except ValueError:
             if rawNumber == "":
-                outputFrame.config(bg="#ff9999")
-                outputLabel.config(text="You must specify number to output", bg="#ff9999")
+                frame.config(bg="#ff9999")
+                label.config(text="You must specify number to output", bg="#ff9999")
                 return
             else:
-                outputFrame.config(bg="#ff9999")
-                outputLabel.config(text="Number to output must be Integer", bg="#ff9999")
+                frame.config(bg="#ff9999")
+                label.config(text="Number to output must be Integer", bg="#ff9999")
                 return
 
-def gui_output_qty_validation(intOutput, csvData):
+
+#confirm there are enough data to fulfill request
+def gui_output_qty_validation(intOutput, csvData, target):
+    targets = target_selection(target)
+    frame = targets[0]
+    label = targets[1]
+
     if intOutput > len(csvData):
-        outputFrame.config(bg="#ff9999")
-        outputLabel.config(text="Input is larger than number of valid addresses. There are: " + str(
+        frame.config(bg="#ff9999")
+        label.config(text="Input is larger than number of valid addresses. There are: " + str(
             len(csvData)) + " valid addresses", bg="#ff9999")
         return False
     else:
         return True
+
 
 def generate_persongen_gui_output():
     state = stateVar.get()
@@ -241,30 +275,35 @@ def generate_persongen_gui_output():
     generate_gui_output(state, rawInput, target)
     return
 
-def generate_lifegen_gui_output():
+
+# for the "Toy Promotion" tab
+def generate_lifegen_gui_output(toy, category):
     state = stateVarToy.get()
     rawInput = outputNumToy.get()
     state = state.lower()
     target = "lifeGen"
-    generate_gui_output(state, rawInput, target)
+    if generate_gui_output(state, rawInput, target):
+        generate_gui_prize(toy, category)
     return
-
 
 
 def generate_gui_output(state, rawInput, target):
     # get correct datafile
     csvData = find_data_file(state)
-    if gui_input_validation(rawInput):
+
+    # validate input qty, print results to gui if true
+    if gui_input_validation(rawInput, target):
         intOutput = int(rawInput)
-        # validate input qty, print to gui if true
-        if gui_output_qty_validation(intOutput, csvData):
+        if gui_output_qty_validation(intOutput, csvData, target):
             parsedData = parse_data(csvData, intOutput)
             global df
             df = parsedData
             update_pandas_table(parsedData, target)
-    return
+            return True
+    return False
 
 
+# place consumed data onto GUI
 def generate_gui_prize(toy, category):
     prizeLabel.config(text=toy)
     prizeCategory.config(text=category)
@@ -272,30 +311,29 @@ def generate_gui_prize(toy, category):
 
 
 def update_pandas_table(parsedData, target):
-    # https: // tkdocs.com / tutorial / tree.html
-    if target == "personGen":
-        tree = pandasTree
-        frame = outputFrame
-        label = outputLabel
-    else:
-        tree = pandasTreeToy
-        frame = outputFrameToy
-        label = outputLabelToy
+    targets = target_selection(target)
+    frame = targets[0]
+    label = targets[1]
+    tree = targets[2]
 
+    # https: // tkdocs.com / tutorial / tree.html
     tree.delete(*tree.get_children())
     for index, row in parsedData.iterrows():
         tree.insert("", 'end', values=list(row))
     frame.config(bg="#b3ffb3")
     label.config(text="Complete!", bg="#b3ffb3")
 
+
 #########################################################################################
 #                    initialize tkinter GUI
 #########################################################################################
+
 
 # root
 root = Tk()
 root.title("Person Generator - Prototype")
 root.geometry('900x600')
+
 
 # tabs
 tabMenu = ttk.Notebook(root)
@@ -303,7 +341,8 @@ personGenTab = ttk.Frame(tabMenu)
 tabMenu.add(personGenTab, text='Person Generator - Prototype')
 toyPromoteTab = ttk.Frame(tabMenu)
 tabMenu.add(toyPromoteTab, text="Toy Give-away Promotion")
-tabMenu.pack(expand=1, fill="both")
+tabMenu.pack(expand=2, fill="both", padx=5, pady=5)
+
 
 # frames persongen
 topFrame = Frame(personGenTab)
@@ -314,6 +353,7 @@ outputFrame = Frame(personGenTab)
 outputFrame.pack(fill="x")
 tableFrame = Frame(personGenTab, width=100)
 tableFrame.pack(side=BOTTOM)
+
 
 # frames lifegen Tab
 topFrameToy = Frame(toyPromoteTab)
@@ -327,29 +367,37 @@ prizeFrame.pack()
 tableFrameToy = Frame(toyPromoteTab, width=100)
 tableFrameToy.pack(side=BOTTOM)
 
+
 # lables personGen
 titleLabel = Label(topFrame, text="Person Generator - Prototype", font=25)
 titleLabel.pack(padx=20, pady=20)
 outputLabel = Label(outputFrame, text="")
 outputLabel.pack(pady=5)
 
+
 #labels lifeGen
 titleLabelToy = Label(topFrameToy, text="Toy Promotion Tab", font=25)
 titleLabelToy.pack(padx=20, pady=20)
 outputLabelToy = Label(outputFrameToy, text="")
 outputLabelToy.pack(pady=5)
-prizeLabel = Label(prizeFrame, text="Prize: ")
+prize = Label(prizeFrame, text="Prize & Prize Category: ", font=12)
+prize.pack(side=TOP)
+prizeLabel = Label(prizeFrame, text="")
 prizeLabel.pack()
-prizeCategory = Label(prizeFrame, text="Category: ")
+prizeCategory = Label(prizeFrame, text="")
 prizeCategory.pack()
 
+
 # treeview scrollbar personGen
+#https://stackoverflow.com/questions/33375489/how-can-i-attach-a-vertical-scrollbar-to-a-treeview-using-tkinter
 pandasTreeScroll = Scrollbar(tableFrame)
 pandasTreeScroll.pack(side=RIGHT, fill=Y)
+
 
 # treeview scrollbar lifeGen
 pandasTreeScrollToy = Scrollbar(tableFrameToy)
 pandasTreeScrollToy.pack(side=RIGHT, fill=Y)
+
 
 # personGen display pandas dataframe w/ tkinter treeview widget
 pandasTree = ttk.Treeview(tableFrame, yscrollcommand=pandasTreeScroll.set)
@@ -362,6 +410,7 @@ for i in cols:
     pandasTree.heading(i, text=i, anchor="center")
 pandasTreeScroll.config(command=pandasTree.yview)
 
+
 #lifeGen display pandas dataframe w/ tkinter treeview widget
 pandasTreeToy = ttk.Treeview(tableFrameToy, yscrollcommand=pandasTreeScrollToy.set)
 pandasTreeToy.pack()
@@ -371,7 +420,8 @@ pandasTreeToy["show"] = 'headings'
 for i in cols:
     pandasTreeToy.column(i, anchor="center", minwidth=100, width=125, stretch=True)
     pandasTreeToy.heading(i, text=i, anchor="center")
-pandasTreeScrollToy.config(command=pandasTree.yview)
+pandasTreeScrollToy.config(command=pandasTreeToy.yview)
+
 
 # person Gen Dropdown state menu
 stateLabel = Label(topFrame, text="Select State: ")
@@ -381,6 +431,7 @@ stateVar = StringVar(root)
 stateVar.set(states[0])
 stateSelect = OptionMenu(topFrame, stateVar, *states)
 stateSelect.pack(side=LEFT, padx=(5, 20))
+
 
 #lifeGen drowdown state menu
 stateLabelToy = Label(topFrameToy, text="Select State: ")
@@ -398,36 +449,45 @@ outputNumLabel.pack(side=LEFT, padx=(20, 5))
 outputNum = Entry(topFrame)
 outputNum.pack(side=LEFT)
 
+
 # LifeGen Number to generate (input box)
 outputNumLabelToy = Label(topFrameToy, text="Number to Generate (int): ")
 outputNumLabelToy.pack(side=LEFT, padx=(20, 5))
 outputNumToy = Entry(topFrameToy)
 outputNumToy.pack(side=LEFT)
 
-# Buttons w/ function calls
+
+# Buttons w/ function calls personGen
 genButton = Button(bottomFrame, text="Generate", bg="#cce6ff", height=4, width=30, command=generate_persongen_gui_output)
 genButton.pack(side=LEFT, padx=10, pady=20)
 csvButton = Button(bottomFrame, text="Export Result to CSV", bg="#cce6ff", height=4, width=30, command=tkinter_generate_csv)
 csvButton.pack(side=LEFT, padx=10, pady=20)
 
+
+# Lifegen buttons w/ fn calls
 genButtonToy = Button(bottomFrameToy, text="Generate Prize and Winners!", bg="#cce6ff", height=4, width=30, command=consumer_socket)
 genButtonToy.pack(side=LEFT, padx=10, pady=20)
 
 
+#########################################################################################
+#                    sys.argv processing and Mainloop
+#########################################################################################
 
+
+#if statement logic to determine if input.csv functions should be called
 if len(sys.argv) > 1:
     print("Generating file...")
     output_csv_from_file()
 
 else:
     if __name__ == '__main__':
-
+        # multiprocessing, run socket server and tkinter simultaneously
         p1 = Process(name="ptkinter", target=tkinter_loop)
         p2 = Process(name="psocket", target=feeder_socket)
         p2.start()
         p1.start()
 
-
+        # determine if tkinter window is closed, kill socket server if tkinter is closed
         while True:
             if not p1.is_alive():
                 p2.terminate()
