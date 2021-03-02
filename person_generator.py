@@ -105,7 +105,7 @@ def find_data_file(state):
 def data_read(fileName):
     dtype = {'NUMBER': "string", 'STREET': "string", 'UNIT': "string", 'CITY': "string", 'DISTRICT': "string",
              'REGION': "string", 'POSTCODE': "string"}
-    data = pd._read_csv(fileName, dtype=dtype)
+    data = pd.read_csv(fileName, dtype=dtype)
 
     # if statement for wyoming exception (no post codes in wyoming data).
     # pandas dropna command to remove data that are missing the required fields (Number, city, street, postcode)
