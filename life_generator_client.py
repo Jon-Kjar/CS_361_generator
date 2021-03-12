@@ -5,7 +5,7 @@ import pickle
 
 
 class LifeGenClient:
-    HEADER_SIZE = 10
+    __HEADER_SIZE = 16
 
     def __init__(self, port):
         """
@@ -32,18 +32,18 @@ class LifeGenClient:
         msg_object = None
         new_msg = True
         while True:
-            msg = self.s.recv(16)
+            msg = self.s.recv(self.__HEADER_SIZE)
             if new_msg:
-                print(f"new message length: {msg[:self.HEADER_SIZE]}")
-                msg_len = int(msg[:self.HEADER_SIZE])
+                print(f"new message length: {msg[:self.__HEADER_SIZE]}")
+                msg_len = int(msg[:self.__HEADER_SIZE])
                 new_msg = False
             full_msg += msg
 
-            if len(full_msg) - self.HEADER_SIZE == msg_len:
+            if len(full_msg) - self.__HEADER_SIZE == msg_len:
                 print("full msg received")
                 break
 
         if full_msg is not None:
-            msg_object = pickle.loads(full_msg[self.HEADER_SIZE:])
+            msg_object = pickle.loads(full_msg[self.__HEADER_SIZE:])
 
         return msg_object

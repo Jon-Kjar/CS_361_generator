@@ -1,4 +1,4 @@
-import csv
+from csv import writer, reader
 from pathlib import Path
 
 # DB columns
@@ -16,8 +16,12 @@ INPUT_TYPE = "input_item_type"
 INPUT_CATEGORY = "input_item_category"
 INPUT_NUM_TO_GEN = "input_number_to_generate"
 
-CSV_HEADER = [INPUT_TYPE, INPUT_CATEGORY, INPUT_NUM_TO_GEN,
-              "output_item_name", "output_item_rating", "output_item_num_reviews"]
+CSV_HEADER = [INPUT_TYPE,
+              INPUT_CATEGORY,
+              INPUT_NUM_TO_GEN,
+              "output_item_name",
+              "output_item_rating",
+              "output_item_num_reviews"]
 
 
 def create_csv(rows):
@@ -27,17 +31,18 @@ def create_csv(rows):
     :return: None
     """
     with open('output.csv', 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(CSV_HEADER)
+        output_writer = writer(f)
+        output_writer.writerow(CSV_HEADER)
         for row in rows:
-            writer.writerow(row)
+            output_writer.writerow(row)
 
       
 class Data:
     data = []
     cols = {}
 
-    def _read_csv(self, file_path):
+    @staticmethod
+    def _read_csv(file_path):
         """
         Reads a csv file into an array object
         :param file_path: path of the file to read
@@ -46,14 +51,15 @@ class Data:
         p = []
         if Path(file_path).exists():
             with open(file_path, encoding="utf8") as f:
-                reader = csv.reader(f, delimiter=',')
-                for row in reader:
+                csv_reader = reader(f, delimiter=',')
+                for row in csv_reader:
                     p.append(row)
         else:
             print("you are missing your csv file: %s" % file_path)
         return p
 
-    def _get_column_index(self, col_name, header):
+    @staticmethod
+    def _get_column_index(col_name, header):
         """
         Gets the column index of a specific name.
         :param col_name: column that we want the index of
@@ -83,8 +89,8 @@ class DatabaseData(Data):
         """
         self.allTypes = []
         for item in self.data:
-            if item.CAT_SUB not in self.allTypes and item.CAT_SUB != "":
-                self.allTypes.append(item.CAT_SUB)
+            if item.category_subcategory not in self.allTypes and item.category_subcategory != "":
+                self.allTypes.append(item.category_subcategory)
 
         self.allTypes = sorted(self.allTypes)
         return self.allTypes
@@ -102,33 +108,44 @@ class DatabaseData(Data):
         p = p[1:]
         self.data = []
         for row in p:
-            self.data.append(DatabaseRowData(row[self.cols[ID]], row[self.cols[PROD_NAME]], row[self.cols[CAT_SUB]], row[self.cols[NUM_REV]], row[self.cols[AVER_REV]]))
+            self.data.append(DatabaseRowData(row[self.cols[ID]],
+                                             row[self.cols[PROD_NAME]],
+                                             row[self.cols[CAT_SUB]],
+                                             row[self.cols[NUM_REV]],
+                                             row[self.cols[AVER_REV]]))
 
   
 class DatabaseRowData:
     def __init__(self, _id, prod_name, cat_sub, num_rev, aver_rev):
         """
-        Gathers the data from a row of the database file. Cleans the data by splitting or checking for empties
+        Gathers the data from a row of the database file.
+        Cleans the data by splitting or checking for empties
         """
-        self.ID = _id
+        self.id = _id
 
-        self.PROD_NAME = prod_name
+        self.product_name = prod_name
 
-        self.CAT_SUB = cat_sub.split(' >')[0]
+        self.category_subcategory = cat_sub.split(' >')[0]
 
         if num_rev == "":
             num_rev = "0"
-        self.NUM_REV = int(num_rev.replace(',', ''))
+        self.number_reviews = int(num_rev.replace(',', ''))
 
         if aver_rev == "":
             aver_rev = "0"
-        self.AVER_REV = float(aver_rev.split(' out')[0])
+        self.average_review = float(aver_rev.split(' out')[0])
 
     def create_csv_line(self, input_data_row):
         """
         Returns what information is needed for the creation of the output CSV file
         """
-        result_row = [input_data_row.input_type, input_data_row.input_cat, str(input_data_row.input_num_to_generate), self.PROD_NAME, self.AVER_REV, self.NUM_REV]
+        result_row = [input_data_row.input_type,
+                      input_data_row.input_cat,
+                      str(input_data_row.input_num_to_generate),
+                      self.product_name,
+                      self.average_review,
+                      self.number_reviews]
+
         return result_row
 
 
@@ -147,7 +164,9 @@ class InputData(Data):
         self.__populate_header_variables(p[0])
         p = p[1:]
         for row in p:
-            self.data.append(InputRowData(row[self.cols[INPUT_TYPE]], row[self.cols[INPUT_CATEGORY]], row[self.cols[INPUT_NUM_TO_GEN]]))
+            self.data.append(InputRowData(row[self.cols[INPUT_TYPE]],
+                                          row[self.cols[INPUT_CATEGORY]],
+                                          row[self.cols[INPUT_NUM_TO_GEN]]))
 
     def __populate_header_variables(self, header):
         self.cols[INPUT_TYPE] = self._get_column_index(INPUT_TYPE, header)
@@ -163,4 +182,3 @@ class InputRowData:
         self.input_type = input_type
         self.input_cat = input_cat
         self.input_num_to_generate = input_num_to_generate
- 

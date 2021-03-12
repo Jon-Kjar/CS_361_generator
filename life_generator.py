@@ -8,18 +8,19 @@ import tkinter.ttk as ttk
 import random
 import sys
 import life_generator_client as lgc
-import life_generator_csv as c
+import life_generator_utils as c
 
-CLIENT_PORT = 5432
+
 DB_FILE = "amazon_co-ecommerce_sample.csv"
-WINDOW_TITLE = "Life Generator"
-
 dataset = None
-outputGridVals = []
-
+outputGridValues = []
 
 
 class LifeGeneratorGUI:
+    __GUI_TABLE_HEADERS = [c.PROD_NAME, c.AVER_REV, c.NUM_REV, c.DOG_DATA]
+    __WINDOW_TITLE = "Life Generator"
+    __CLIENT_PORT = 5432
+
     entry_gui = None
     type_val = None
     quantity_variable = None
@@ -38,7 +39,6 @@ class LifeGeneratorGUI:
         if len(sys.argv) > 1:
             self.__run_batch()
 
-
     def create_gui(self):
         """
         sets up the GUI window
@@ -46,13 +46,13 @@ class LifeGeneratorGUI:
         """
         root1 = tk.Tk()
 
-        root1.title(WINDOW_TITLE)
+        root1.title(self.WINDOW_TITLE)
         root1.geometry("700x500")
 
         mainframe = tk.Frame(root1)
         mainframe.grid(column=0, row=0)
 
-        validate_command = (root1.register(validate), '%P')
+        validate_command = (root1.register(self.validate), '%P')
 
         # row 1 - output quantity
         quantity_text = tk.StringVar()
@@ -62,7 +62,10 @@ class LifeGeneratorGUI:
 
         self.quantity_variable = tk.IntVar()
 
-        input_entry = tk.Entry(mainframe, textvariable=self.quantity_variable, validate='key', validatecommand=validate_command)
+        input_entry = tk.Entry(mainframe,
+                               textvariable=self.quantity_variable,
+                               validate='key',
+                               validatecommand=validate_command)
         input_entry.grid(column=2, row=1)
 
         # row 2
@@ -91,9 +94,9 @@ class LifeGeneratorGUI:
         header = tk.Entry(self.entry_gui, width=20)
         header.grid(row=row, column=col)
         header.insert(tk.END, name)
-        outputGridVals.append(header)
+        outputGridValues.append(header)
 
-    def generate_click(self):
+    def __generate_click(self):
         """
         Creates an output csv given the info in the GUI
         :return: None
@@ -104,24 +107,22 @@ class LifeGeneratorGUI:
         result_array = get_top(input_row.input_cat, input_row.input_num_to_generate)
 
         # clear out all old values
-        for x in outputGridVals:
+        for x in outputGridValues:
             x.destroy()
 
         # create headers
-        self.__create_entry(c.PROD_NAME, 4)
-        self.__create_entry(c.AVER_REV, 5)
-        self.__create_entry(c.NUM_REV, 6)
-        self.__create_entry(c.DOG_DATA, 7)
+        for index, header in enumerate(self.__GUI_TABLE_HEADERS):
+            self.__create_entry(header, index + 4)
 
         # receive column 7 data from content generator
-        lg_client = lgc.LifeGenClient(CLIENT_PORT)
+        lg_client = lgc.LifeGenClient(self.CLIENT_PORT)
         wiki_desc = lg_client.receive_info()
 
         # populate the contents of table
         for i, row in enumerate(result_array):
-            self.__create_entry(row.PROD_NAME, 4, i + 1)
-            self.__create_entry(row.AVER_REV, 5, i + 1)
-            self.__create_entry(row.NUM_REV, 6, i + 1)
+            self.__create_entry(row.product_name, 4, i + 1)
+            self.__create_entry(row.average_review, 5, i + 1)
+            self.__create_entry(row.number_reviews, 6, i + 1)
             self.__create_entry(wiki_desc, 7, i + 1)
 
         csv_results = []
@@ -130,7 +131,8 @@ class LifeGeneratorGUI:
 
         c.create_csv(csv_results)
 
-    def __run_batch(self):
+    @staticmethod
+    def __run_batch():
         """
         Creates the output csv file from an input csv file
         :return: None
@@ -149,18 +151,18 @@ class LifeGeneratorGUI:
 
         c.create_csv(csv_output)
 
-
-def validate(value_if_allowed):
-    """
-    filter the quantity to return by only int values
-    :param value_if_allowed:
-    :return:
-    """
-    try:
-        int(value_if_allowed)
-        return True
-    except ValueError:
-        return False
+    @staticmethod
+    def __validate(value_if_allowed):
+        """
+        filter the quantity to return by only int values
+        :param value_if_allowed:
+        :return:
+        """
+        try:
+            int(value_if_allowed)
+            return True
+        except ValueError:
+            return False
 
 
 def get_top(cat, quantity):
@@ -177,15 +179,15 @@ def get_top(cat, quantity):
     :param quantity: quantity to return
     :return: items that fulfill the sort
     """
-    p = [s for s in dataset.data if s.CAT_SUB == cat]
+    p = [s for s in dataset.data if s.category_subcategory == cat]
 
-    p = sorted(p, key=lambda x: x.ID)
+    p = sorted(p, key=lambda x: x.id)
 
-    p = sorted(p, key=lambda x: x.NUM_REV, reverse=True)
+    p = sorted(p, key=lambda x: x.number_reviews, reverse=True)
 
     p = p[:(quantity * 10)]
 
-    p = sorted(p, key=lambda x: x.AVER_REV, reverse=True)
+    p = sorted(p, key=lambda x: x.average_review, reverse=True)
 
     p = p[:quantity]
     return p
@@ -207,7 +209,7 @@ def get_top_random_toy():
     rand_type = random.choice(types)
     res = get_top(rand_type, 1)[0]
 
-    return [res.PROD_NAME, res.CAT_SUB]
+    return [res.product_name, res.category_subcategory]
 
 
 def main():
