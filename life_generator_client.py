@@ -5,7 +5,7 @@ import pickle
 
 
 class LifeGenClient:
-    __HEADER_SIZE = 16
+    __HEADER_SIZE = 10
 
     def __init__(self, port):
         """

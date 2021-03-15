@@ -4,6 +4,7 @@
 # https://creativecommons.org/licenses/by-sa/4.0/
 import tkinter as tk
 import tkinter.ttk as ttk
+from tkinter import messagebox
 
 import random
 import sys
@@ -46,31 +47,33 @@ class LifeGeneratorGUI:
         """
         root1 = tk.Tk()
 
-        root1.title(self.WINDOW_TITLE)
+        root1.title(self.__WINDOW_TITLE)
         root1.geometry("700x500")
 
         mainframe = tk.Frame(root1)
         mainframe.grid(column=0, row=0)
 
-        validate_command = (root1.register(self.validate), '%P')
+        validate_command = (root1.register(self.__validate), '%P')
 
         # row 1 - output quantity
         quantity_text = tk.StringVar()
-        quantity_text.set("Enter results desired")
+        quantity_text.set("1) Enter results desired")
         quantity_dir = tk.Label(mainframe, textvariable=quantity_text, height=4)
         quantity_dir.grid(column=1, row=1)
 
         self.quantity_variable = tk.IntVar()
+        # self.quantity_variable.trace(mode="w", callback=self.quantity_variable_warning_command)
 
         input_entry = tk.Entry(mainframe,
                                textvariable=self.quantity_variable,
                                validate='key',
                                validatecommand=validate_command)
+
         input_entry.grid(column=2, row=1)
 
         # row 2
         type_text = tk.StringVar()
-        type_text.set("Choose toy category")
+        type_text.set("2) Choose toy category")
         type_dir = tk.Label(mainframe, textvariable=type_text, height=4)
         type_dir.grid(column=1, row=2)
 
@@ -81,7 +84,7 @@ class LifeGeneratorGUI:
         type_options.grid(column=2, row=2)
 
         # row 3 - generate
-        generate_button = tk.Button(mainframe, text="Generate", command=self.generate_click)
+        generate_button = tk.Button(mainframe, text="Generate", command=self.__generate_click)
         generate_button.grid(column=2, row=3)
 
         # row 4
@@ -115,7 +118,7 @@ class LifeGeneratorGUI:
             self.__create_entry(header, index + 4)
 
         # receive column 7 data from content generator
-        lg_client = lgc.LifeGenClient(self.CLIENT_PORT)
+        lg_client = lgc.LifeGenClient(self.__CLIENT_PORT)
         wiki_desc = lg_client.receive_info()
 
         # populate the contents of table
@@ -130,6 +133,7 @@ class LifeGeneratorGUI:
             csv_results.append(row.create_csv_line(input_row))
 
         c.create_csv(csv_results)
+        messagebox.showinfo("output", "Output file created.")
 
     @staticmethod
     def __run_batch():
@@ -159,7 +163,9 @@ class LifeGeneratorGUI:
         :return:
         """
         try:
-            int(value_if_allowed)
+            quant = int(value_if_allowed)
+            if quant > 50:
+                messagebox.showwarning("warning", "Your results will exceeded the size of the window.")
             return True
         except ValueError:
             return False

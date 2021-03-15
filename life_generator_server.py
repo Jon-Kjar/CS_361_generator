@@ -7,14 +7,14 @@ from life_generator import get_top_random_toy
 
 class LifeGenServer:
     __SERVER_PORT = 5423
-    __HEADER_SIZE = 16
+    __HEADER_SIZE = 10
 
     def __init__(self):
         """
         Initiates everything needed for the socket listening
         """
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.bind((socket.gethostname(), self.port))
+        self.s.bind((socket.gethostname(), self.__SERVER_PORT))
         self.s.listen(5)
         print("<Server> Listening on {}:{}...".format(socket.gethostname(), self.__SERVER_PORT))
 
